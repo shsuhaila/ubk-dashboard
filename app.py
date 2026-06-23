@@ -41,20 +41,18 @@ tab_ind, tab_kel = st.tabs(["👤 Sesi Individu", "👥 Sesi Kelompok"])
 with tab_ind:
     st.header("Analisis Sesi Individu")
     
-    # Pengiraan KPI mengikut kehendak baru
+    # Pengiraan KPI
     total_kes = len(df_ind)
     
-    # Mengira Kaunseling Individu (Mencari perkataan 'KAUNSELING')
     bil_kaunseling = 0
     if "Jenis Kaunseling" in df_ind.columns:
         bil_kaunseling = len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("KAUNSELING", na=False)])
         
-    # Mengira Bimbingan Individu (Mencari perkataan 'BIMBINGAN')
     bil_bimb = 0
     if "Jenis Kaunseling" in df_ind.columns:
         bil_bimb = len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("BIMBINGAN", na=False)])
         
-    # Paparan baris kad nombor (Bahagian yang diubah kepada 3 lajur)
+    # Paparan baris kad nombor
     c1, c2, c3 = st.columns(3)
     c1.metric("Jumlah Kes Individu", total_kes)
     c2.metric("Kaunseling Individu 📋", bil_kaunseling)
@@ -62,6 +60,7 @@ with tab_ind:
     
     st.markdown("---")
     
+    # BARIS GRAF PERTAMA: Kategori Rujukan & Tingkatan (Baru)
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Mengikut Kategori Rujukan")
@@ -72,11 +71,25 @@ with tab_ind:
             st.plotly_chart(fig1, use_container_width=True)
             
     with col2:
+        st.subheader("Bilangan Murid Mengikut Tingkatan (Individu)")
+        if "Tingkatan" in df_ind.columns and not df_ind.empty:
+            df_ting_ind = df_ind.dropna(subset=["Tingkatan"]).copy()
+            df_ting_ind["Tingkatan"] = df_ting_ind["Tingkatan"].astype(str).str.replace(r'\.0$', '', regex=True)
+            fig_ting = px.histogram(df_ting_ind, x="Tingkatan", color="Tingkatan", category_orders={"Tingkatan": sorted(df_ting_ind["Tingkatan"].unique())})
+            st.plotly_chart(fig_ting, use_container_width=True)
+                
+    st.markdown("---")
+    
+    # BARIS GRAF KEDUA: Pecahan Jantina
+    col3, col4 = st.columns([1, 1])
+    with col3:
         st.subheader("Pecahan Jantina")
         if "Jantina" in df_ind.columns and not df_ind.empty:
             fig2 = px.pie(df_ind, names="Jantina", hole=0.4, color_discrete_sequence=["#FF69B4", "#002F6C"])
             st.plotly_chart(fig2, use_container_width=True)
-                
+    with col4:
+        st.write("") # Dikosongkan sebelah jantina supaya kemas
+        
     st.markdown("---")
     st.subheader("📋 Senarai Murid Individu")
     st.dataframe(df_ind.reset_index(drop=True), use_container_width=True)
