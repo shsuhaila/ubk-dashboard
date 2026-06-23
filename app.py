@@ -30,28 +30,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. GENERATE SAMPLE DATA
-@st.cache_data
-def load_sample_data():
-    data = [
-        {"ID Murid": f"M{i:03d}", "Nama Murid": nama, "Tingkatan": ting, "Kelas": kel, "Jantina": jan,
-         "Tarikh Sesi": pd.to_datetime(tarikh), "Jenis Kaunseling": jns, "Kategori Rujukan": ruj, 
-         "Isu": isu, "Tindakan Susulan": tindakan, "Status Kes": stat}
-        for i, (nama, ting, kel, jan, tarikh, jns, ruj, isu, tindakan, stat) in enumerate([
-            ("Ahmad Danial", "Tingkatan 5", "Sidiq", "Lelaki", "2026-01-10", "Individu", "SSDM", "Disiplin lewat ke sekolah", "Sesi amaran", "Selesai"),
-            ("Siti Nurhaliza", "Tingkatan 4", "Amanah", "Perempuan", "2026-01-15", "Individu", "Minda Sihat", "Anxiety peperiksaan", "Latihan pernafasan", "Aktif"),
-            ("Muhammad Ali", "Tingkatan 3", "Tabligh", "Lelaki", "2026-01-22", "Kelompok", "Rujukan Guru", "Kurang motivasi", "Bimbingan kelompok", "Selesai"),
-            ("Chong Wei", "Tingkatan 5", "Fatonah", "Lelaki", "2026-02-05", "Individu", "Psikometrik", "Pemilihan kerjaya", "Ujian Minat", "Selesai"),
-            ("Nur Aisha", "Tingkatan 2", "Sidiq", "Perempuan", "2026-02-12", "Individu", "SSDM", "Bully siber", "Sesi mediasi", "Aktif"),
-            ("Arvin Raj", "Tingkatan 1", "Amanah", "Lelaki", "2026-02-18", "Kelompok", "Minda Sihat", "Stress penyesuaian", "Sesi suai kenal", "Selesai"),
-            ("Fatima Zahra", "Tingkatan 4", "Tabligh", "Perempuan", "2026-03-01", "Individu", "Rujukan Guru", "Masalah keluarga", "Sokongan emosi", "Aktif"),
-            ("Lim Jia Khang", "Tingkatan 3", "Fatonah", "Lelaki", "2026-03-14", "Individu", "SSDM", "Merokok", "Rujukan PK HEM", "Selesai"),
-            ("Saraswathy", "Tingkatan 5", "Sidiq", "Perempuan", "2026-03-20", "Kelompok", "Psikometrik", "Persediaan SPM", "Teknik belajar", "Selesai"),
-            ("Muhammad Haziq", "Tingkatan 2", "Amanah", "Lelaki", "2026-04-02", "Individu", "Minda Sihat", "Kemurungan ringan", "Pemantauan", "Aktif")
-        ] * 3, start=1) # Loops data to make 30 items easily
-    ]
-    return pd.DataFrame(data)
+# 2. LOAD LIVE DATA FROM GOOGLE SHEETS
+sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygPpWyjOnYqTFZfgXCJngFRojFVeK4mZ3Vq0/export?format=csv"
 
-df_all = load_sample_data()
+@st.cache_data(ttl=60)
+def load_live_data():
+    df_live = pd.read_csv(sheet_url)
+    df_live["Tarikh Sesi"] = pd.to_datetime(df_live["Tarikh Sesi"])
+    return df_live
+
+df_all = load_live_data()
 
 # 3. SIDEBAR / FILTERS
 st.sidebar.header("Tapis Data Dashboard")
