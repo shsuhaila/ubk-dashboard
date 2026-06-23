@@ -41,7 +41,7 @@ def load_data(url):
 
 st.caption("🔄 Memuatkan data secara langsung dari tab INDIVIDU & KELOMPOK...")
 
-# Membaca data mentah secara terus tanpa sekatan struktur
+# Membaca data mentah
 df_ind = load_data(url_individu)
 df_kel = load_data(url_kelompok)
 
@@ -63,4 +63,23 @@ with tab_individu:
     st.subheader("📊 Analisis Data Sesi Individu")
     
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Jumlah Kes Individu", len(df
+    # Pembetulan kurungan lengkap di sini
+    c1.metric("Jumlah Kes Individu", len(df_ind))
+    
+    # Kira bimbingan
+    bil_bimbingan = 0
+    if "Jenis Kaunseling" in df_ind.columns:
+        bil_bimbingan = len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("BIMBINGAN", na=False)])
+    c2.metric("Bimbingan Individu", bil_bimbingan)
+    
+    # Kira Status Kes
+    kes_aktif = len(df_ind[df_ind["Status Kes"] == "Aktif"]) if "Status Kes" in df_ind.columns else 0
+    kes_selesai = len(df_ind[df_ind["Status Kes"] == "Selesai"]) if "Status Kes" in df_ind.columns else 0
+    c3.metric("Kes Aktif 🟡", kes_aktif)
+    c4.metric("Kes Selesai 🟢", kes_selesai)
+    
+    st.markdown("---")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Mengikut Kategori
