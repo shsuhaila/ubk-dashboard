@@ -60,7 +60,7 @@ with tab_ind:
     
     st.markdown("---")
     
-    # BARIS GRAF PERTAMA: Kategori Rujukan & Tingkatan (Baru)
+    # BARIS GRAF PERTAMA: Kategori Rujukan & Tingkatan (Sama Format!)
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Mengikut Kategori Rujukan")
@@ -71,24 +71,34 @@ with tab_ind:
             st.plotly_chart(fig1, use_container_width=True)
             
     with col2:
-        st.subheader("Bilangan Murid Mengikut Tingkatan (Individu)")
+        st.subheader("Bilangan Murid Mengikut Tingkatan")
         if "Tingkatan" in df_ind.columns and not df_ind.empty:
             df_ting_ind = df_ind.dropna(subset=["Tingkatan"]).copy()
+            # Bersihkan format tulisan tingkatan
             df_ting_ind["Tingkatan"] = df_ting_ind["Tingkatan"].astype(str).str.replace(r'\.0$', '', regex=True)
-            fig_ting = px.histogram(df_ting_ind, x="Tingkatan", color="Tingkatan", category_orders={"Tingkatan": sorted(df_ting_ind["Tingkatan"].unique())})
+            
+            # Tukar struktur pengiraan sama seperti Graf Rujukan (px.bar)
+            df_ting_count = df_ting_ind["Tingkatan"].value_counts().reset_index()
+            df_ting_count.columns = ["Tingkatan", "Bilangan Kes"]
+            df_ting_count = df_ting_count.sort_values(by="Tingkatan")
+            
+            # Bina graf bar diskret yang kemas
+            fig_ting = px.bar(df_ting_count, x="Tingkatan", y="Bilangan Kes", color="Tingkatan")
+            # Paksa paksi X memaparkan teks kategori dengan jelas
+            fig_ting.update_layout(xaxis_type='category')
             st.plotly_chart(fig_ting, use_container_width=True)
                 
     st.markdown("---")
     
     # BARIS GRAF KEDUA: Pecahan Jantina
-    col3, col4 = st.columns([1, 1])
+    col3, col4 = st.columns(2)
     with col3:
         st.subheader("Pecahan Jantina")
         if "Jantina" in df_ind.columns and not df_ind.empty:
             fig2 = px.pie(df_ind, names="Jantina", hole=0.4, color_discrete_sequence=["#FF69B4", "#002F6C"])
             st.plotly_chart(fig2, use_container_width=True)
     with col4:
-        st.write("") # Dikosongkan sebelah jantina supaya kemas
+        st.write("") 
         
     st.markdown("---")
     st.subheader("📋 Senarai Murid Individu")
@@ -108,14 +118,24 @@ with tab_kel:
     
     col_k1, col_k2 = st.columns(2)
     with col_k1:
+        st.subheader("Bilangan Murid Mengikut Tingkatan")
         if "Tingkatan" in df_kel.columns and not df_kel.empty:
             df_ting = df_kel.dropna(subset=["Tingkatan"]).copy()
             df_ting["Tingkatan"] = df_ting["Tingkatan"].astype(str).str.replace(r'\.0$', '', regex=True)
-            fig3 = px.histogram(df_ting, x="Tingkatan", title="Bilangan Murid Mengikut Tingkatan")
+            
+            # Diseragamkan juga untuk Sesi Kelompok menggunakan px.bar
+            df_ting_kel_count = df_ting["Tingkatan"].value_counts().reset_index()
+            df_ting_kel_count.columns = ["Tingkatan", "Bilangan Kes"]
+            df_ting_kel_count = df_ting_kel_count.sort_values(by="Tingkatan")
+            
+            fig3 = px.bar(df_ting_kel_count, x="Tingkatan", y="Bilangan Kes", color="Tingkatan")
+            fig3.update_layout(xaxis_type='category')
             st.plotly_chart(fig3, use_container_width=True)
+                
     with col_k2:
+        st.subheader("Pecahan Jantina Ahli Kelompok")
         if "Jantina" in df_kel.columns and not df_kel.empty:
-            fig4 = px.pie(df_kel, names="Jantina", title="Pecahan Jantina Ahli Kelompok", hole=0.4)
+            fig4 = px.pie(df_kel, names="Jantina", hole=0.4, color_discrete_sequence=["#002F6C", "#FF69B4"])
             st.plotly_chart(fig4, use_container_width=True)
 
     st.subheader("Semakan Ahli Mengikut Kumpulan")
