@@ -20,45 +20,72 @@ def load_data(url):
 df_ind = load_data(url_individu)
 df_kel = load_data(url_kelompok)
 
+# Pembersihan data & Penyeragaman Huruf Besar
 if not df_ind.empty and "Nama Murid" in df_ind.columns:
     df_ind = df_ind.dropna(subset=["Nama Murid"])
+    # Seragamkan lajur penting menjadi HURUF BESAR untuk elak ralat pengiraan
+    if "Kategori Rujukan" in df_ind.columns:
+        df_ind["Kategori Rujukan"] = df_ind["Kategori Rujukan"].astype(str).str.strip().str.upper()
+    if "Status Kes" in df_ind.columns:
+        df_ind["Status Kes"] = df_ind["Status Kes"].astype(str).str.strip().str.upper()
+
 if not df_kel.empty and "Nama" in df_kel.columns:
     df_kel = df_kel.dropna(subset=["Nama"])
 
 # 3. TAJUK UTAMA
-st.title("DASHBOARD KHIDMAT KAUNSELING MURID (UBK)")
+st.title("📊 DASHBOARD KHIDMAT KAUNSELING MURID (UBK)")
 
 # 4. SISTEM TAB
-tab_ind, tab_kel = st.tabs(["Sesi Individu", "Sesi Kelompok"])
+tab_ind, tab_kel = st.tabs(["👤 Sesi Individu", "👥 Sesi Kelompok"])
 
-# ================= TAB 1 =================
+# ================= TAB 1: INDIVIDU =================
 with tab_ind:
     st.header("Analisis Sesi Individu")
+    
+    # Pengiraan KPI yang tepat menggunakan teks huruf besar
+    total_kes = len(df_ind)
+    
+    bil_bimb = 0
+    if "Jenis Kaunseling" in df_ind.columns:
+        bil_bimb = len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("BIMBINGAN", na=False)])
+        
+    # Mengira rujukan guru secara selamat (HURUF BESAR)
+    rujukan_guru = 0
+    if "Kategori Rujukan" in df_ind.columns:
+        rujukan_guru = len(df_ind[df_ind["Kategori Rujukan"] == "RUJUKAN GURU"])
+        
+    kes_selesai = len(df_ind[df_ind["Status Kes"] == "SELESAI"]) if "Status Kes" in df_ind.columns else 0
+    
+    # Paparan baris kad nombor
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Jumlah Kes Individu", len(df_ind))
+    c1.metric("Jumlah Kes Individu", total_kes)
+    c2.metric("Rujukan Guru 👥", rujukan_guru)
+    c3.metric("Bimbingan Individu", bil_bimb)
+    c4.metric("Kes Selesai 🟢", kes_selesai)
     
-    bil_bimb = len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("BIMBINGAN", na=False)]) if "Jenis Kaunseling" in df_ind.columns else 0
-    c2.metric("Bimbingan Individu", bil_bimb)
-    
-    kes_aktif = len(df_ind[df_ind["Status Kes"] == "Aktif"]) if "Status Kes" in df_ind.columns else 0
-    kes_selesai = len(df_ind[df_ind["Status Kes"] == "Selesai"]) if "Status Kes" in df_ind.columns else 0
-    c3.metric("Kes Aktif", kes_aktif)
-    c4.metric("Kes Selesai", kes_selesai)
+    st.markdown("---")
     
     col1, col2 = st.columns(2)
     with col1:
+        st.subheader("Mengikut Kategori Rujukan")
         if "Kategori Rujukan" in df_ind.columns and not df_ind.empty:
-            fig1 = px.bar(df_ind, x="Kategori Rujukan", title="Kategori Rujukan")
+            # Membuat graf bar susunan mengikut bilangan tertinggi
+            df_count = df_ind["Kategori Rujukan"].value_counts().reset_index()
+            df_count.columns = ["Kategori Rujukan", "Bilangan Kes"]
+            fig1 = px.bar(df_count, x="Kategori Rujukan", y="Bilangan Kes", color="Kategori Rujukan")
             st.plotly_chart(fig1, use_container_width=True)
-    with col2:
-        if "Jantina" in df_ind.columns and not df_ind.empty:
-            fig2 = px.pie(df_ind, names="Jantina", title="Pecahan Jantina", hole=0.4)
-            st.plotly_chart(fig2, use_container_width=True)
             
-    st.subheader("Senarai Murid Individu")
+    with col2:
+        st.subheader("Pecahan Jantina")
+        if "Jantina" in df_ind.columns and not df_ind.empty:
+            fig2 = px.pie(df_ind, names="Jantina", hole=0.4, color_discrete_sequence=["#FF69B4", "#002F6C"])
+            st.plotly_chart(fig2, use_container_width=True)
+                
+    st.markdown("---")
+    st.subheader("📋 Senarai Murid Individu")
     st.dataframe(df_ind.reset_index(drop=True), use_container_width=True)
 
-# ================= TAB 2 =================
+# ================= TAB 2: KELOMPOK =================
 with tab_kel:
     st.header("Pengurusan Sesi Kelompok")
     total_ahli = len(df_kel)
