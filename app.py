@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import datetime
 import plotly.express as px
 
 # 1. PAGE CONFIGURATION
@@ -29,92 +28,96 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. LOAD LIVE DATA FROM GOOGLE SHEETS
-sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygPpWyjOnYqTFZfgXCJngFRojFVeK4mZ3Vq0/gviz/tq?tqx=out:csv"
+# 2. PAUTAN UTK BACA DUA TAB BERBEZA
+base_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygPpWyjOnYqTFZfgXCJngFRojFVeK4mZ3Vq0/gviz/tq?tqx=out:csv"
+url_individu = f"{base_url}&sheet=INDIVIDU"
+url_kelompok = f"{base_url}&sheet=KELOMPOK"
 
 @st.cache_data(ttl=5)
-def load_live_data():
-    df_live = pd.read_csv(sheet_url)
+def load_data(url):
+    df_live = pd.read_csv(url)
     df_live.columns = df_live.columns.str.strip()
-    if "Tarikh Sesi" in df_live.columns:
-        df_live["Tarikh Sesi"] = pd.to_datetime(df_live["Tarikh Sesi"], errors='coerce')
     return df_live
 
-st.caption(f"Menyambung ke fail Google Sheets...")
+st.caption("🔄 Memuatkan data secara langsung dari tab INDIVIDU & KELOMPOK...")
 
 try:
-    df_all = load_live_data()
+    df_ind = load_data(url_individu)
+    df_kel = load_data(url_kelompok)
     
-    # 3. SIDEBAR / FILTERS
-    st.sidebar.header("Tapis Data Dashboard")
-    
-    filter_ting = st.sidebar.multiselect("Tingkatan", options=sorted(df_all["Tingkatan"].dropna().unique()) if "Tingkatan" in df_all.columns else [], default=sorted(df_all["Tingkatan"].dropna().unique()) if "Tingkatan" in df_all.columns else [])
-    filter_kelas = st.sidebar.multiselect("Kelas", options=sorted(df_all["Kelas"].dropna().unique()) if "Kelas" in df_all.columns else [], default=sorted(df_all["Kelas"].dropna().unique()) if "Kelas" in df_all.columns else [])
-    filter_jenis = st.sidebar.multiselect("Jenis Kaunseling", options=df_all["Jenis Kaunseling"].dropna().unique() if "Jenis Kaunseling" in df_all.columns else [], default=df_all["Jenis Kaunseling"].dropna().unique() if "Jenis Kaunseling" in df_all.columns else [])
-    filter_rujukan = st.sidebar.multiselect("Kategori Rujukan", options=df_all["Kategori Rujukan"].dropna().unique() if "Kategori Rujukan" in df_all.columns else [], default=df_all["Kategori Rujukan"].dropna().unique() if "Kategori Rujukan" in df_all.columns else [])
+    if "Tarikh Sesi" in df_ind.columns:
+        df_ind["Tarikh Sesi"] = pd.to_datetime(df_ind["Tarikh Sesi"], errors='coerce')
 
-    df = df_all.copy()
-    if "Tingkatan" in df.columns and filter_ting:
-        df = df[df["Tingkatan"].isin(filter_ting)]
-    if "Kelas" in df.columns and filter_kelas:
-        df = df[df["Kelas"].isin(filter_kelas)]
-    if "Jenis Kaunseling" in df.columns and filter_jenis:
-        df = df[df["Jenis Kaunseling"].isin(filter_jenis)]
-    if "Kategori Rujukan" in df.columns and filter_rujukan:
-        df = df[df["Kategori Rujukan"].isin(filter_rujukan)]
-
-    # 4. APP HEADER SECTION
+    # 3. APP HEADER SECTION
     st.markdown("<h1 class='main-title'>DASHBOARD KHIDMAT KAUNSELING MURID</h1>", unsafe_allow_html=True)
     st.markdown("<h4 class='sub-title'>Unit Bimbingan & Kaunseling (UBK)</h4>", unsafe_allow_html=True)
 
-    # 5. TOP KPI CARDS
-    col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("Jumlah Keseluruhan", len(df))
-    col2.metric("Individu", len(df[df["Jenis Kaunseling"] == "Individu"]) if "Jenis Kaunseling" in df.columns else 0)
-    col3.metric("Kelompok", len(df[df["Jenis Kaunseling"] == "Kelompok"]) if "Jenis Kaunseling" in df.columns else 0)
-    col4.metric("Kes Aktif 🟡", len(df[df["Status Kes"] == "Aktif"]) if "Status Kes" in df.columns else 0)
-    col5.metric("Kes Selesai 🟢", len(df[df["Status Kes"] == "Selesai"]) if "Status Kes" in df.columns else 0)
+    # 4. SISTEM TAB UTAMA DI DALAM APP
+    tab_individu, tab_kelompok = st.tabs(["👤 Sesi Individu", "👥 Sesi Kelompok / Group"])
 
-    st.markdown("---")
+    # ================= TAB 1: INDIVIDU =================
+    with tab_individu:
+        st.subheader("📊 Analisis Data Sesi Individu")
+        
+        # KPI Cards Individu
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Jumlah Kes Individu", len(df_ind))
+        c2.metric("Bimbingan Individu", len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("BIMBINGAN", na=False)]) if "Jenis Kaunseling" in df_ind.columns else 0)
+        c3.metric("Kes Aktif 🟡", len(df_ind[df_ind["Status Kes"] == "Aktif"]) if "Status Kes" in df_ind.columns else 0)
+        c4.metric("Kes Selesai 🟢", len(df_ind[df_ind["Status Kes"] == "Selesai"]) if "Status Kes" in df_ind.columns else 0)
+        
+        st.markdown("---")
+        
+        # Charts Individu
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Mengikut Kategori Rujukan (Individu)")
+            if "Kategori Rujukan" in df_ind.columns and not df_ind.empty:
+                fig1 = px.bar(df_ind, x="Kategori Rujukan", color="Kategori Rujukan")
+                st.plotly_chart(fig1, use_container_width=True)
+        
+        with col2:
+            st.subheader("Pecahan Jantina (Individu)")
+            if "Jantina" in df_ind.columns and not df_ind.empty:
+                fig2 = px.pie(df_ind, names="Jantina", hole=0.4, color_discrete_sequence=["#FF69B4", "#002F6C"])
+                st.plotly_chart(fig2, use_container_width=True)
+                
+        st.markdown("---")
+        st.subheader("📋 Laporan Senarai Murid (Individu)")
+        st.dataframe(df_ind.reset_index(drop=True), use_container_width=True)
 
-    # 6. CHARTS LAYOUT SECTION
-    row1_col1, row1_col2 = st.columns(2)
-    with row1_col1:
-        st.subheader("Bilangan Murid Mengikut Kategori Rujukan")
-        if "Kategori Rujukan" in df.columns and not df.empty:
-            fig_bar = px.bar(df, x="Kategori Rujukan", color="Kategori Rujukan")
-            st.plotly_chart(fig_bar, use_container_width=True)
-        else:
-            st.info("Tiada data rujukan.")
+    # ================= TAB 2: KELOMPOK =================
+    with tab_kelompok:
+        st.subheader("👥 Pengurusan Sesi Kelompok")
+        
+        # KPI Cards Kelompok
+        total_ahli = len(df_kel)
+        total_kumpulan = df_kel["KELOMPOK"].nunique() if "KELOMPOK" in df_kel.columns else 0
+        
+        k1, k2 = st.columns(2)
+        k1.metric("Jumlah Keseluruhan Kumpulan Kelompok", total_kumpulan)
+        k2.metric("Jumlah Ahli Murid Terlibat", total_ahli)
+        
+        st.markdown("---")
+        
+        # Charts Kelompok
+        col_k1, col_k2 = st.columns(2)
+        with col_k1:
+            st.subheader("Bilangan Murid Kelompok Mengikut Tingkatan")
+            if "Tingkatan" in df_kel.columns and not df_kel.empty:
+                fig3 = px.histogram(df_kel, x="Tingkatan", color="Tingkatan")
+                st.plotly_chart(fig3, use_container_width=True)
+                
+        with col_k2:
+            st.subheader("Pecahan Jantina Ahli Kelompok")
+            if "Jantina" in df_kel.columns and not df_kel.empty:
+                fig4 = px.pie(df_kel, names="Jantina", hole=0.4, color_discrete_sequence=["#002F6C", "#FF69B4"])
+                st.plotly_chart(fig4, use_container_width=True)
 
-    with row1_col2:
-        st.subheader("Perbandingan Kaunseling Individu & Kelompok")
-        if "Jenis Kaunseling" in df.columns and not df.empty:
-            fig_pie = px.pie(df, names="Jenis Kaunseling", hole=0.4, color_discrete_sequence=["#002F6C", "#006B3E"])
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.info("Tiada data jenis kaunseling.")
-
-    row2_col1, row2_col2 = st.columns(2)
-    with row2_col1:
-        st.subheader("Bilangan Murid Mengikut Tingkatan")
-        if "Tingkatan" in df.columns and not df.empty:
-            fig_ting = px.histogram(df, x="Tingkatan")
-            st.plotly_chart(fig_ting, use_container_width=True)
-
-    with row2_col2:
-        st.subheader("Bilangan Murid Mengikut Jantina")
-        if "Jantina" in df.columns and not df.empty:
-            fig_jantina = px.pie(df, names="Jantina", hole=0.4, color_discrete_sequence=["#002F6C", "#FF69B4"])
-            st.plotly_chart(fig_jantina, use_container_width=True)
-        else:
-            st.info("Tiada data jantina.")
-
-    st.markdown("---")
-    st.subheader("📋 Laporan Senarai Murid")
-    st.dataframe(df.reset_index(drop=True), use_container_width=True)
+        st.markdown("---")
+        st.subheader("📋 Senarai Ahli Kumpulan Kelompok")
+        st.dataframe(df_kel.reset_index(drop=True), use_container_width=True)
 
 except Exception as e:
-    st.error(f"Gagal memuatkan data. Sila pastikan pautan adalah betul.")
-    st.info(f"Pautan semasa: {sheet_url}")
+    st.error(f"Gagal memuatkan data dari Google Sheets.")
     st.write(f"Ralat sistem: {e}")
