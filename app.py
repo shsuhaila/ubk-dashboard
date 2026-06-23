@@ -37,32 +37,33 @@ url_kelompok = f"{base_url}&sheet=KELOMPOK"
 def load_data(url):
     df_live = pd.read_csv(url)
     df_live.columns = df_live.columns.str.strip()
-    # Buang baris yang benar-benar kosong berdasarkan Nama Murid / Kelompok
-    if not df_live.empty:
-        df_live = df_live.dropna(subset=[df_live.columns[0], df_live.columns[1]], how='all')
     return df_live
 
 st.caption("🔄 Memuatkan data secara langsung dari tab INDIVIDU & KELOMPOK...")
 
 try:
-    df_ind = load_data(url_individu)
-    df_kel = load_data(url_kelompok)
+    df_ind_raw = load_data(url_individu)
+    df_kel_raw = load_data(url_kelompok)
     
     # Bersihkan data Individu
-    if not df_ind.empty:
+    if not df_ind_raw.empty and "Nama Murid" in df_ind_raw.columns:
+        df_ind = df_ind_raw.dropna(subset=["Nama Murid"]).copy()
         if "Tarikh Sesi" in df_ind.columns:
             df_ind["Tarikh Sesi"] = pd.to_datetime(df_ind["Tarikh Sesi"], errors='coerce')
         if "Tingkatan" in df_ind.columns:
             df_ind = df_ind.dropna(subset=["Tingkatan"])
             df_ind["Tingkatan"] = df_ind["Tingkatan"].astype(int).astype(str)
+    else:
+        df_ind = df_ind_raw.copy()
 
     # Bersihkan data Kelompok
-    if not df_kel.empty:
-        if "Tingkatan" in df_kel.columns:
-            df_kel = df_kel.dropna(subset=["Tingkatan"])
-            df_kel["Tingkatan"] = df_kel["Tingkatan"].astype(int).astype(str)
+    if not df_kel_raw.empty and "Nama" in df_kel_raw.columns:
+        df_kel = df_kel_raw.dropna(subset=["Nama"]).copy()
         if "KELOMPOK" in df_kel.columns:
+            # Kekalkan sebagai rentetan (string) teks bersih tanpa perpuluhan
             df_kel["KELOMPOK"] = df_kel["KELOMPOK"].astype(int).astype(str)
+    else:
+        df_kel = df_kel_raw.copy()
 
     # 3. APP HEADER SECTION
     st.markdown("<h1 class='main-title'>DASHBOARD KHIDMAT KAUNSELING MURID</h1>", unsafe_allow_html=True)
@@ -75,7 +76,6 @@ try:
     with tab_individu:
         st.subheader("📊 Analisis Data Sesi Individu")
         
-        # KPI Cards Individu
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Jumlah Kes Individu", len(df_ind))
         c2.metric("Bimbingan Individu", len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("BIMBINGAN", na=False)]) if "Jenis Kaunseling" in df_ind.columns else 0)
@@ -84,7 +84,6 @@ try:
         
         st.markdown("---")
         
-        # Charts Individu
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Mengikut Kategori Rujukan (Individu)")
@@ -106,39 +105,5 @@ try:
     with tab_kelompok:
         st.subheader("👥 Pengurusan Sesi Kelompok")
         
-        # KPI Cards Kelompok
         total_ahli = len(df_kel)
-        total_kumpulan = df_kel["KELOMPOK"].nunique() if "KELOMPOK" in df_kel.columns else 0
-        
-        k1, k2 = st.columns(2)
-        k1.metric("Jumlah Keseluruhan Kumpulan Kelompok", total_kumpulan)
-        k2.metric("Jumlah Ahli Murid Terlibat", total_ahli)
-        
-        st.markdown("---")
-        
-        # Charts Kelompok
-        col_k1, col_k2 = st.columns(2)
-        with col_k1:
-            st.subheader("Bilangan Murid Kelompok Mengikut Tingkatan")
-            if "Tingkatan" in df_kel.columns and not df_kel.empty:
-                # Menggunakan bar chart kategori supaya susunan mengikut teks '1', '2', '3' tanpa perpuluhan
-                df_ting_count = df_kel["Tingkatan"].value_counts().reset_index()
-                df_ting_count.columns = ["Tingkatan", "Bilangan Murid"]
-                df_ting_count = df_ting_count.sort_values(by="Tingkatan")
-                
-                fig3 = px.bar(df_ting_count, x="Tingkatan", y="Bilangan Murid", color="Tingkatan")
-                st.plotly_chart(fig3, use_container_width=True)
-                
-        with col_k2:
-            st.subheader("Pecahan Jantina Ahli Kelompok")
-            if "Jantina" in df_kel.columns and not df_kel.empty:
-                fig4 = px.pie(df_kel, names="Jantina", hole=0.4, color_discrete_sequence=["#002F6C", "#FF69B4"])
-                st.plotly_chart(fig4, use_container_width=True)
-
-        st.markdown("---")
-        st.subheader("📋 Senarai Ahli Kumpulan Kelompok")
-        st.dataframe(df_kel.reset_index(drop=True), use_container_width=True)
-
-except Exception as e:
-    st.error(f"Gagal memuatkan data dari Google Sheets.")
-    st.write(f"Ralat sistem: {e}")
+        total_kumpulan = df_kel["KELOMPOK"].nunique() if "KELOMPOK" in df
