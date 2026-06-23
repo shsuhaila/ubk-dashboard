@@ -37,6 +37,9 @@ url_kelompok = f"{base_url}&sheet=KELOMPOK"
 def load_data(url):
     df_live = pd.read_csv(url)
     df_live.columns = df_live.columns.str.strip()
+    # Buang baris yang benar-benar kosong berdasarkan Nama Murid / Kelompok
+    if not df_live.empty:
+        df_live = df_live.dropna(subset=[df_live.columns[0], df_live.columns[1]], how='all')
     return df_live
 
 st.caption("🔄 Memuatkan data secara langsung dari tab INDIVIDU & KELOMPOK...")
@@ -45,8 +48,21 @@ try:
     df_ind = load_data(url_individu)
     df_kel = load_data(url_kelompok)
     
-    if "Tarikh Sesi" in df_ind.columns:
-        df_ind["Tarikh Sesi"] = pd.to_datetime(df_ind["Tarikh Sesi"], errors='coerce')
+    # Bersihkan data Individu
+    if not df_ind.empty:
+        if "Tarikh Sesi" in df_ind.columns:
+            df_ind["Tarikh Sesi"] = pd.to_datetime(df_ind["Tarikh Sesi"], errors='coerce')
+        if "Tingkatan" in df_ind.columns:
+            df_ind = df_ind.dropna(subset=["Tingkatan"])
+            df_ind["Tingkatan"] = df_ind["Tingkatan"].astype(int).astype(str)
+
+    # Bersihkan data Kelompok
+    if not df_kel.empty:
+        if "Tingkatan" in df_kel.columns:
+            df_kel = df_kel.dropna(subset=["Tingkatan"])
+            df_kel["Tingkatan"] = df_kel["Tingkatan"].astype(int).astype(str)
+        if "KELOMPOK" in df_kel.columns:
+            df_kel["KELOMPOK"] = df_kel["KELOMPOK"].astype(int).astype(str)
 
     # 3. APP HEADER SECTION
     st.markdown("<h1 class='main-title'>DASHBOARD KHIDMAT KAUNSELING MURID</h1>", unsafe_allow_html=True)
@@ -105,7 +121,12 @@ try:
         with col_k1:
             st.subheader("Bilangan Murid Kelompok Mengikut Tingkatan")
             if "Tingkatan" in df_kel.columns and not df_kel.empty:
-                fig3 = px.histogram(df_kel, x="Tingkatan", color="Tingkatan")
+                # Menggunakan bar chart kategori supaya susunan mengikut teks '1', '2', '3' tanpa perpuluhan
+                df_ting_count = df_kel["Tingkatan"].value_counts().reset_index()
+                df_ting_count.columns = ["Tingkatan", "Bilangan Murid"]
+                df_ting_count = df_ting_count.sort_values(by="Tingkatan")
+                
+                fig3 = px.bar(df_ting_count, x="Tingkatan", y="Bilangan Murid", color="Tingkatan")
                 st.plotly_chart(fig3, use_container_width=True)
                 
         with col_k2:
