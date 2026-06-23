@@ -30,7 +30,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. LOAD LIVE DATA FROM GOOGLE SHEETS (Without ID Murid)
-sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygpPwYjOnYqTFzfgXCJngFRojFVeK4mZ3Vq0/export?format=csv"
+sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygpPwYjOnYqTFzfgXCJngFRojFVeK4mZ3Vq0/gviz/tq?tqx=out:csv"
 
 @st.cache_data(ttl=10) # Reduced to 10 seconds for faster updates while testing!
 def load_live_data():
