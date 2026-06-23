@@ -30,7 +30,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. LOAD LIVE DATA FROM GOOGLE SHEETS
-# Using the exact case-sensitive ID from your URL string
 sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygPpWyjOnYqTFZfgXCJngFRojFVeK4mZ3Vq0/gviz/tq?tqx=out:csv"
 
 @st.cache_data(ttl=5)
@@ -41,7 +40,6 @@ def load_live_data():
         df_live["Tarikh Sesi"] = pd.to_datetime(df_live["Tarikh Sesi"], errors='coerce')
     return df_live
 
-# Displaying debug helper
 st.caption(f"Menyambung ke fail Google Sheets...")
 
 try:
@@ -103,13 +101,15 @@ try:
         if "Tingkatan" in df.columns and not df.empty:
             fig_ting = px.histogram(df, x="Tingkatan")
             st.plotly_chart(fig_ting, use_container_width=True)
-with row2_col2:
+
+    with row2_col2:
         st.subheader("Bilangan Murid Mengikut Jantina")
         if "Jantina" in df.columns and not df.empty:
             fig_jantina = px.pie(df, names="Jantina", hole=0.4, color_discrete_sequence=["#002F6C", "#FF69B4"])
             st.plotly_chart(fig_jantina, use_container_width=True)
         else:
             st.info("Tiada data jantina.")
+
     st.markdown("---")
     st.subheader("📋 Laporan Senarai Murid")
     st.dataframe(df.reset_index(drop=True), use_container_width=True)
