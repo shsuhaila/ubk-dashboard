@@ -105,7 +105,6 @@ try:
         st.subheader("👥 Pengurusan Sesi Kelompok")
         
         total_ahli = len(df_kel)
-        # PEMBETULAN DI SINI: Ditambah 'else 0' untuk mengelakkan ralat SyntaxError
         total_kumpulan = df_kel["KELOMPOK"].nunique() if "KELOMPOK" in df_kel.columns else 0
         
         k1, k2 = st.columns(2)
@@ -120,4 +119,9 @@ try:
             df_ting_valid = df_kel.dropna(subset=["Tingkatan"]).copy() if "Tingkatan" in df_kel.columns else pd.DataFrame()
             if not df_ting_valid.empty:
                 df_ting_valid["Tingkatan"] = df_ting_valid["Tingkatan"].astype(int).astype(str)
-                df_ting_count = df_ting_valid
+                df_ting_count = df_ting_valid["Tingkatan"].value_counts().reset_index()
+                df_ting_count.columns = ["Tingkatan", "Bilangan Murid"]
+                df_ting_count = df_ting_count.sort_values(by="Tingkatan")
+                
+                fig3 = px.bar(df_ting_count, x="Tingkatan", y="Bilangan Murid", color="Tingkatan")
+                st.plotly_chart(fig3, use_container_width=True)
