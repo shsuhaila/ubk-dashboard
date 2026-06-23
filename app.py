@@ -60,7 +60,6 @@ try:
     if not df_kel_raw.empty and "Nama" in df_kel_raw.columns:
         df_kel = df_kel_raw.dropna(subset=["Nama"]).copy()
         if "KELOMPOK" in df_kel.columns:
-            # Kekalkan sebagai rentetan (string) teks bersih tanpa perpuluhan
             df_kel["KELOMPOK"] = df_kel["KELOMPOK"].astype(int).astype(str)
     else:
         df_kel = df_kel_raw.copy()
@@ -106,4 +105,19 @@ try:
         st.subheader("👥 Pengurusan Sesi Kelompok")
         
         total_ahli = len(df_kel)
-        total_kumpulan = df_kel["KELOMPOK"].nunique() if "KELOMPOK" in df
+        # PEMBETULAN DI SINI: Ditambah 'else 0' untuk mengelakkan ralat SyntaxError
+        total_kumpulan = df_kel["KELOMPOK"].nunique() if "KELOMPOK" in df_kel.columns else 0
+        
+        k1, k2 = st.columns(2)
+        k1.metric("Jumlah Keseluruhan Kumpulan Kelompok", total_kumpulan)
+        k2.metric("Jumlah Ahli Murid Terlibat", total_ahli)
+        
+        st.markdown("---")
+        
+        col_k1, col_k2 = st.columns(2)
+        with col_k1:
+            st.subheader("Bilangan Murid Kelompok Mengikut Tingkatan")
+            df_ting_valid = df_kel.dropna(subset=["Tingkatan"]).copy() if "Tingkatan" in df_kel.columns else pd.DataFrame()
+            if not df_ting_valid.empty:
+                df_ting_valid["Tingkatan"] = df_ting_valid["Tingkatan"].astype(int).astype(str)
+                df_ting_count = df_ting_valid
