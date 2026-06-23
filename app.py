@@ -103,13 +103,13 @@ try:
         if "Tingkatan" in df.columns and not df.empty:
             fig_ting = px.histogram(df, x="Tingkatan")
             st.plotly_chart(fig_ting, use_container_width=True)
-
-    with row2_col2:
-        st.subheader("Bilangan Murid Mengikut Kelas")
-        if "Kelas" in df.columns and not df.empty:
-            fig_kelas = px.histogram(df, x="Kelas")
-            st.plotly_chart(fig_kelas, use_container_width=True)
-
+with row2_col2:
+        st.subheader("Bilangan Murid Mengikut Jantina")
+        if "Jantina" in df.columns and not df.empty:
+            fig_jantina = px.pie(df, names="Jantina", hole=0.4, color_discrete_sequence=["#002F6C", "#FF69B4"])
+            st.plotly_chart(fig_jantina, use_container_width=True)
+        else:
+            st.info("Tiada data jantina.")
     st.markdown("---")
     st.subheader("📋 Laporan Senarai Murid")
     st.dataframe(df.reset_index(drop=True), use_container_width=True)
