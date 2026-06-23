@@ -31,7 +31,7 @@ st.markdown("""
 
 # 2. LOAD LIVE DATA FROM GOOGLE SHEETS
 # Using the exact case-sensitive ID from your URL string
-sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygPpWyjOnYqTFzfgXCJngFRojFVeK4mZ3Vq0/gviz/tq?tqx=out:csv"
+sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygPpWyjOnYqTFZfgXCJngFRojFVeK4mZ3Vq0/gviz/tq?tqx=out:csv"
 
 @st.cache_data(ttl=5)
 def load_live_data():
