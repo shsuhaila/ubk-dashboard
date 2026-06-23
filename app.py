@@ -29,17 +29,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. LOAD LIVE DATA FROM GOOGLE SHEETS (Without ID Murid)
+# 2. LOAD LIVE DATA FROM GOOGLE SHEETS
+# Using the exact case-sensitive ID from your URL string
 sheet_url = "https://docs.google.com/spreadsheets/d/1bVA4HXnygPpWyjOnYqTFzfgXCJngFRojFVeK4mZ3Vq0/gviz/tq?tqx=out:csv"
 
-@st.cache_data(ttl=10) # Reduced to 10 seconds for faster updates while testing!
+@st.cache_data(ttl=5)
 def load_live_data():
     df_live = pd.read_csv(sheet_url)
-    # Strip any accidental hidden spaces from headers
     df_live.columns = df_live.columns.str.strip()
     if "Tarikh Sesi" in df_live.columns:
         df_live["Tarikh Sesi"] = pd.to_datetime(df_live["Tarikh Sesi"], errors='coerce')
     return df_live
+
+# Displaying debug helper
+st.caption(f"Menyambung ke fail Google Sheets...")
 
 try:
     df_all = load_live_data()
@@ -47,13 +50,11 @@ try:
     # 3. SIDEBAR / FILTERS
     st.sidebar.header("Tapis Data Dashboard")
     
-    # Safely generate dynamic filters based on whatever columns exist
     filter_ting = st.sidebar.multiselect("Tingkatan", options=sorted(df_all["Tingkatan"].dropna().unique()) if "Tingkatan" in df_all.columns else [], default=sorted(df_all["Tingkatan"].dropna().unique()) if "Tingkatan" in df_all.columns else [])
     filter_kelas = st.sidebar.multiselect("Kelas", options=sorted(df_all["Kelas"].dropna().unique()) if "Kelas" in df_all.columns else [], default=sorted(df_all["Kelas"].dropna().unique()) if "Kelas" in df_all.columns else [])
     filter_jenis = st.sidebar.multiselect("Jenis Kaunseling", options=df_all["Jenis Kaunseling"].dropna().unique() if "Jenis Kaunseling" in df_all.columns else [], default=df_all["Jenis Kaunseling"].dropna().unique() if "Jenis Kaunseling" in df_all.columns else [])
     filter_rujukan = st.sidebar.multiselect("Kategori Rujukan", options=df_all["Kategori Rujukan"].dropna().unique() if "Kategori Rujukan" in df_all.columns else [], default=df_all["Kategori Rujukan"].dropna().unique() if "Kategori Rujukan" in df_all.columns else [])
 
-    # Filter data engine
     df = df_all.copy()
     if "Tingkatan" in df.columns and filter_ting:
         df = df[df["Tingkatan"].isin(filter_ting)]
@@ -86,7 +87,7 @@ try:
             fig_bar = px.bar(df, x="Kategori Rujukan", color="Kategori Rujukan")
             st.plotly_chart(fig_bar, use_container_width=True)
         else:
-            st.info("Sila masukkan data rujukan dahulu.")
+            st.info("Tiada data rujukan.")
 
     with row1_col2:
         st.subheader("Perbandingan Kaunseling Individu & Kelompok")
@@ -94,7 +95,7 @@ try:
             fig_pie = px.pie(df, names="Jenis Kaunseling", hole=0.4, color_discrete_sequence=["#002F6C", "#006B3E"])
             st.plotly_chart(fig_pie, use_container_width=True)
         else:
-            st.info("Sila masukkan data jenis kaunseling.")
+            st.info("Tiada data jenis kaunseling.")
 
     row2_col1, row2_col2 = st.columns(2)
     with row2_col1:
@@ -114,4 +115,6 @@ try:
     st.dataframe(df.reset_index(drop=True), use_container_width=True)
 
 except Exception as e:
-    st.error(f"Sila semak fail Google Sheets anda. Pastikan baris data bermula di Baris 2. Error rujukan: {e}")
+    st.error(f"Gagal memuatkan data. Sila pastikan pautan adalah betul.")
+    st.info(f"Pautan semasa: {sheet_url}")
+    st.write(f"Ralat sistem: {e}")
