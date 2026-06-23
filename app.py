@@ -23,7 +23,6 @@ df_kel = load_data(url_kelompok)
 # Pembersihan data & Penyeragaman Huruf Besar
 if not df_ind.empty and "Nama Murid" in df_ind.columns:
     df_ind = df_ind.dropna(subset=["Nama Murid"])
-    # Seragamkan lajur penting menjadi HURUF BESAR untuk elak ralat pengiraan
     if "Kategori Rujukan" in df_ind.columns:
         df_ind["Kategori Rujukan"] = df_ind["Kategori Rujukan"].astype(str).str.strip().str.upper()
     if "Status Kes" in df_ind.columns:
@@ -42,26 +41,24 @@ tab_ind, tab_kel = st.tabs(["👤 Sesi Individu", "👥 Sesi Kelompok"])
 with tab_ind:
     st.header("Analisis Sesi Individu")
     
-    # Pengiraan KPI yang tepat menggunakan teks huruf besar
+    # Pengiraan KPI mengikut kehendak baru
     total_kes = len(df_ind)
     
+    # Mengira Kaunseling Individu (Mencari perkataan 'KAUNSELING')
+    bil_kaunseling = 0
+    if "Jenis Kaunseling" in df_ind.columns:
+        bil_kaunseling = len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("KAUNSELING", na=False)])
+        
+    # Mengira Bimbingan Individu (Mencari perkataan 'BIMBINGAN')
     bil_bimb = 0
     if "Jenis Kaunseling" in df_ind.columns:
         bil_bimb = len(df_ind[df_ind["Jenis Kaunseling"].str.upper().str.contains("BIMBINGAN", na=False)])
         
-    # Mengira rujukan guru secara selamat (HURUF BESAR)
-    rujukan_guru = 0
-    if "Kategori Rujukan" in df_ind.columns:
-        rujukan_guru = len(df_ind[df_ind["Kategori Rujukan"] == "RUJUKAN GURU"])
-        
-    kes_selesai = len(df_ind[df_ind["Status Kes"] == "SELESAI"]) if "Status Kes" in df_ind.columns else 0
-    
-    # Paparan baris kad nombor
-    c1, c2, c3, c4 = st.columns(4)
+    # Paparan baris kad nombor (Bahagian yang diubah kepada 3 lajur)
+    c1, c2, c3 = st.columns(3)
     c1.metric("Jumlah Kes Individu", total_kes)
-    c2.metric("Rujukan Guru 👥", rujukan_guru)
-    c3.metric("Bimbingan Individu", bil_bimb)
-    c4.metric("Kes Selesai 🟢", kes_selesai)
+    c2.metric("Kaunseling Individu 📋", bil_kaunseling)
+    c3.metric("Bimbingan Individu 💡", bil_bimb)
     
     st.markdown("---")
     
@@ -69,7 +66,6 @@ with tab_ind:
     with col1:
         st.subheader("Mengikut Kategori Rujukan")
         if "Kategori Rujukan" in df_ind.columns and not df_ind.empty:
-            # Membuat graf bar susunan mengikut bilangan tertinggi
             df_count = df_ind["Kategori Rujukan"].value_counts().reset_index()
             df_count.columns = ["Kategori Rujukan", "Bilangan Kes"]
             fig1 = px.bar(df_count, x="Kategori Rujukan", y="Bilangan Kes", color="Kategori Rujukan")
@@ -94,6 +90,8 @@ with tab_kel:
     k1, k2 = st.columns(2)
     k1.metric("Jumlah Kumpulan", total_kumpulan)
     k2.metric("Jumlah Ahli Terlibat", total_ahli)
+    
+    st.markdown("---")
     
     col_k1, col_k2 = st.columns(2)
     with col_k1:
